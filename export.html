@@ -119,7 +119,6 @@
       await downloadFile(jsonContent, fileName)
     } else if (pluginMessage.type === "EXPORT_TOKENS") {
       const allTokens = pluginMessage.allTokens
-      console.log(allTokens)
       const jsonContent = JSON.stringify(allTokens, null, 2)
       await downloadFile(jsonContent, "tokens.json")
     }
