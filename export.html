@@ -43,6 +43,7 @@
     padding: var(--spacing);
     white-space: pre;
   }
+
   textarea:focus {
     border-color: var(--figma-color-border-selected);
     outline: none;
@@ -69,24 +70,79 @@
   }
 </style>
 <main>
-  <button id="export" type="button">Export Variables</button>
-  <textarea
-    placeholder="Exported variables will render here..."
-    readonly
-  ></textarea>
+  <button id="show"
+          type="button">Show Variables</button>
+  <textarea placeholder="Exported variables will render here..."
+            readonly></textarea>
+  <!-- 
+  <button id="export"
+          type="button">Export Variables</button> -->
+  <button id="exportCore"
+          type="button">Export Core Variables</button>
+  <button id="exportContextual"
+          type="button">Export Contextual Variables</button>
+  <button id="exportTokens"
+          type="button">Export Tokens</button>
 </main>
+
 <script>
-  window.onmessage = ({ data: { pluginMessage } }) => {
-    if (pluginMessage.type === "EXPORT_RESULT") {
+  function downloadFile(content, filename) {
+    const blob = new Blob([content], { type: "application/json" })
+    const blobURL = window.URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = blobURL
+    link.download = filename || "tokens.json"
+    link.click()
+  }
+
+  window.onmessage = async ({ data: { pluginMessage } }) => {
+    if (pluginMessage.type === "SHOW_TOKENS") {
       document.querySelector("textarea").innerHTML = pluginMessage.files
-        .map(
-          ({ fileName, body }) =>
-            `/* ${fileName} */\n\n${JSON.stringify(body, null, 2)}`
-        )
-        .join("\n\n\n");
+        .map(({ body }) => JSON.stringify(body, null, 2))
+        .join("\n")
+    } else if (pluginMessage.type === "EXPORT") {
+      const files = pluginMessage.files
+      for (const file of files) {
+        const { fileName, body } = file
+        const jsonContent = JSON.stringify(body, null, 2)
+        await downloadFile(jsonContent, fileName)
+      }
+    } else if (pluginMessage.type === "EXPORT_CORE") {
+      const file = pluginMessage.file
+      const { body, fileName } = file
+      const jsonContent = JSON.stringify(body, null, 2)
+      await downloadFile(jsonContent, fileName)
+    } else if (pluginMessage.type === "EXPORT_CONTEXTUAL") {
+      const file = pluginMessage.file
+      const { body, fileName } = file
+      const jsonContent = JSON.stringify(body, null, 2)
+      await downloadFile(jsonContent, fileName)
+    } else if (pluginMessage.type === "EXPORT_TOKENS") {
+      const allTokens = pluginMessage.allTokens
+      console.log(allTokens)
+      const jsonContent = JSON.stringify(allTokens, null, 2)
+      await downloadFile(jsonContent, "tokens.json")
     }
-  };
-  document.getElementById("export").addEventListener("click", () => {
-    parent.postMessage({ pluginMessage: { type: "EXPORT" } }, "*");
+  }
+
+
+  document.getElementById("show").addEventListener("click", () => {
+    parent.postMessage({ pluginMessage: { type: "SHOW_TOKENS" } }, "*")
+  })
+
+  // document.getElementById("export").addEventListener("click", () => {
+  //   parent.postMessage({ pluginMessage: { type: "EXPORT" } }, "*")
+  // })
+
+  document.getElementById("exportCore").addEventListener("click", () => {
+    parent.postMessage({ pluginMessage: { type: "EXPORT_CORE" } }, "*")
+  })
+
+  document.getElementById("exportContextual").addEventListener("click", () => {
+    parent.postMessage({ pluginMessage: { type: "EXPORT_CONTEXTUAL" } }, "*")
+  })
+
+  document.getElementById("exportTokens").addEventListener("click", () => {
+    parent.postMessage({ pluginMessage: { type: "EXPORT_TOKENS" } }, "*")
   });
 </script>
